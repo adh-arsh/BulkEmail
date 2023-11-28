@@ -1,6 +1,7 @@
 # BulkEmail
 
 to use:
+
 upload the excel sheet as per the template
 
 upload word document as per the template
