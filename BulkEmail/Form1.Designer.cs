@@ -182,7 +182,7 @@
             this.groupBox1.Controls.Add(this.fromEmailTB);
             this.groupBox1.Controls.Add(this.sendMailBtn);
             this.groupBox1.Controls.Add(this.subjectTB);
-            this.groupBox1.Location = new System.Drawing.Point(952, 213);
+            this.groupBox1.Location = new System.Drawing.Point(961, 115);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.Size = new System.Drawing.Size(411, 473);
             this.groupBox1.TabIndex = 8;
@@ -320,7 +320,7 @@
             this.Controls.Add(this.uploadExcelBtn);
             this.Controls.Add(this.excelGV);
             this.Name = "Form1";
-            this.Text = "Bulk Email";
+            this.Text = "Bulk Email 1.0.0 alpha";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             ((System.ComponentModel.ISupportInitialize)(this.excelGV)).EndInit();
             this.groupBox1.ResumeLayout(false);

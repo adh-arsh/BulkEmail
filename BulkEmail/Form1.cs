@@ -1,4 +1,6 @@
 using Aspose.Email.Clients;
+using DocumentFormat.OpenXml.Bibliography;
+using DocumentFormat.OpenXml.Office2013.PowerPoint.Roaming;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Spreadsheet;
 using DocumentFormat.OpenXml.Vml;
@@ -6,8 +8,10 @@ using OpenXmlPowerTools;
 using System.Data;
 using System.Diagnostics;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Mail;
 using System.Xml.Linq;
+using System.Xml.Serialization;
 using Excel = Microsoft.Office.Interop.Excel;
 
 namespace BulkEmail
@@ -207,7 +211,9 @@ namespace BulkEmail
         }
 
 
-        private string sendMail(string from, string to, string subject, string host, int port, string email, string password, string fromName)
+
+        //sendimg email using host system
+        private string _sendMail(string from, string to, string subject, string host, int port, string email, string password, string fromName)
         {
             string returnStatus = "Not Sent";
 
@@ -228,7 +234,6 @@ namespace BulkEmail
             client.Host = host;
             client.Port = port;
             client.EnableSsl = true;
-            client.Timeout = 10000;
             client.UseDefaultCredentials = false;
             client.Credentials = new NetworkCredential(email, password);
 
@@ -251,7 +256,7 @@ namespace BulkEmail
         private void testMailBtn_Click(object sender, EventArgs e)
         {
             MessageBox.Show(
-            sendMail(from: emailTB.Text,
+            _sendMail(from: emailTB.Text,
                 to: emailTB.Text,
                 subject: "Email for SMTP configuration",
                 host: hostTB.Text,
@@ -267,7 +272,7 @@ namespace BulkEmail
             bool retStatus = false;
 
             string startupPath = Environment.CurrentDirectory;
-            //string emailbodyHTML = File.ReadAllText(startupPath + "\\html.txt");
+            string emailbodyHTML = File.ReadAllText(startupPath + "\\html.txt");
             
             string sourcePath = startupPath + "\\html.txt";
             string destinationPath = startupPath + "\\msg.txt";
@@ -276,6 +281,11 @@ namespace BulkEmail
             {
 
                 File.WriteAllLines(destinationPath, File.ReadLines(sourcePath).Select(line => line.Replace("{name}", name)));
+
+
+                //replace variables in subject line 
+                string subjectLine = subjectTB.Text;
+                subjectTB.Text = subjectLine.Replace("{name}", name);
                 retStatus = true;
             }
             catch (Exception ex)
@@ -289,6 +299,45 @@ namespace BulkEmail
 
         }
 
+
+        //sending email using API hosted in clients website
+        private string sendEmail(string subject, string toEmail, string name)
+        {
+            string returnStatus = "Not Sent";
+
+            var client = new HttpClient();
+            client.BaseAddress = new Uri("https://textilefairsindia.com/automation-test/auto-emailer/sendemail.php");
+
+
+
+            string urlParameters = "?subject=" + subject + "&email=" + toEmail + "&name=" +name;
+
+
+            // Add an Accept header for JSON format.
+            client.DefaultRequestHeaders.Accept.Add(
+               new MediaTypeWithQualityHeaderValue("application/json"));
+            // Get data response
+            var response = client.GetAsync(urlParameters).Result;
+
+            if (response.IsSuccessStatusCode)
+            {
+
+                // Parse the response body
+                var dataObjects = response.Content.ReadAsStringAsync().Result;
+
+                returnStatus = "Sent";
+
+
+            }
+            else
+            {
+                returnStatus = "Error";
+            }
+
+
+            return returnStatus;
+        }
+
         private void sendMailBtn_Click(object sender, EventArgs e)
         {
             sendMailBtn.Text = "Cancel";
@@ -298,36 +347,59 @@ namespace BulkEmail
 
                 foreach (DataGridViewRow row in excelGV.Rows)
                 {
+
+                    
+
                     bool emailIsNotNull = row.Cells["email"].Value != null;
+
                     if (emailIsNotNull)
                     {
-                        string name = row.Cells["email"].Value.ToString();
+                        string name = row.Cells["name"].Value.ToString();
 
                         string toEmail = row.Cells["email"].Value.ToString();
+                       
+
+                       
+                        string subjectLine = subjectTB.Text;
+
+                        string subject = subjectLine.Replace("{name}", name);
 
                         if (toEmail != "" && subjectTB.Text.Length > 0)
                         {
+                            Debug.WriteLine(name + subject + "------");
                             
-
-                            if(addVariablesToHTMLtxt(name))
+                            if (addVariablesToHTMLtxt(name))
                             {
+
+                           
                                 
-                               row.Cells["Status"].Value = sendMail(
+                               row.Cells["Status"].Value = _sendMail(
                                                                from: fromEmailTB.Text,
                                                                to: toEmail,
-                                                               subject: subjectTB.Text,
+                                                               subject: subject,
                                                                host: hostTB.Text,
                                                                port: Int32.Parse(portTB.Text),
                                                                email: emailTB.Text,
                                                                password: passwordTB.Text,
                                                                fromName: sendernameTB.Text
                                                                );
+
                                 
+
+                                //row.Cells["Status"].Value = sendEmail(subject: subjectTB.Text, toEmail);
+                               
+
+
                             }
+                           
+
+                           // sendEmail(subject, toEmail, name);
 
 
-                            
-
+                        }
+                        else
+                        {
+                            MessageBox.Show("Email or subject line missing");
                         }
 
 
